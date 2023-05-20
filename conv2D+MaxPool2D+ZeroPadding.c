@@ -28,27 +28,27 @@ void Conv2D (int *image, int *new_image,  int stride, int img_dim, int kernel, i
   }
 }
 
-void MaxPool2D (int *image, int *new_image,  int stride, int img_dim, int kernel, int final_dim )
+void MaxPool2D (int *image, int *new_image,  int stride, int img_dim, int kernel, int final_dim , int start)
 {
-  int i;int k;int j; int l=0;
+  int l=0;
   int *img = &image[0];
   int s=0;
-  for (i=0 ; i<final_dim; i++)
+  for (int i=start ; i<final_dim +start; i++)
   {
     new_image[i]=0;
     
-    if(img < &image[img_dim-kernel + 1+ l*img_dim]) {img = &image[i*stride+(kernel-1)*s];}
-    else {img = &image[i*stride + (kernel-1)*(s+1)];l++;s++;}
+    if(img < &image[img_dim-kernel + 1+ l*img_dim]) {img = &image[(i-start)*stride+(kernel-1)*s];}
+    else {img = &image[(i-start)*stride + (kernel-1)*(s+1)];l++;s++;}
 
-    for (k=0; k<kernel; k++)
+    for (int k=0; k<kernel; k++)
       {
-        for ( j=0; j<kernel; j++)
+        for (int j=0; j<kernel; j++)
         {
         if(img[j+(k*img_dim)]>new_image[i]){new_image[i] = img[j+(k*img_dim)];}
         }
       }
-    if(img < &image[img_dim-kernel+ 1 + l*img_dim]) {img = &image[i*stride+(kernel-1)*s+1];}
-    else {img = &image[i*stride+(kernel-1)*(s+1)+1];} 
+    if(img < &image[img_dim-kernel+ 1 + l*img_dim]) {img = &image[(i-start)*stride+(kernel-1)*s+1];}
+    else {img = &image[(i-start)*stride+(kernel-1)*(s+1)+1];} 
   }
 }
 
@@ -74,6 +74,23 @@ void ZeroPadding(int *image, int *new_image, int img_dim, int padding)
           }
         }
 }
+
+
+void MaxPoolManyChannel(int *input, int *output, int stride,int kernel, int img_dim,int nbr_input_chan,int final_dim)
+{ 
+  // final dim of pooling of one image
+  int input_interm[img_dim*img_dim]; 
+  for (int i=0; i<nbr_input_chan; i++)
+  {  // we have the i filter
+    for (int k =0; k<(img_dim*img_dim);k++){input_interm[k]= input[k+i*(img_dim*img_dim)];} 
+    int start = i*final_dim;
+    MaxPool2D(input_interm,output,stride,img_dim,kernel,final_dim,start);
+  }
+}
+
+
+
+
         
 void ConvOneChannel(int *input, int *output, int stride, int img_dim,int nbr_kernels, int * total_weights,int kernel,int final_dim)
 {
@@ -144,13 +161,21 @@ int main()
 
   int output[16]={0};  // 16 = 4 (image l9dima apres pooling m3a filtre 2x2) x 4 (nbr de kernels)
   int output_dim=16;
-  ConvOneChannel(image, new_image, stride, img_dim,2 ,weights_layer1, kernel_l1, final_dim_pooling_l1); // done new image 3x3x2
+  int max_pool_output[4];
   // // Conv2D(image, new_image, stride, img_dim, kernel, weights, final_dim_pooling,9); done
-  ConvManyChannel(new_image, output, output_dim, stride, 3, nbr_kernels, weights_layer2, kernel_l2,4, 2);
+  ConvOneChannel(image, new_image, stride, img_dim,2 ,weights_layer1, kernel_l1, final_dim_pooling_l1); // done new image 3x3x2
+  ConvManyChannel(new_image, output, output_dim, stride, 3, nbr_kernels, weights_layer2, kernel_l2,4, 2); // done
+  
+
+  // MaxPool2D (output, max_pool_output,  stride, 2, 2, 1, 4); // done
+  MaxPoolManyChannel(output, max_pool_output, stride,2, 2,4,1); //done
+
+
+
 
   
   // for(int i=0; i<18;i++){printf("%d",new_image[i]);}
-  for(int i=0; i<16;i++){printf("%d \n",output[i]);}
+  for(int i=0; i<4;i++){printf("%d \n",max_pool_output[i]);}
   return 0;
  
 }
