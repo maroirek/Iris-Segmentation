@@ -74,42 +74,52 @@ void ZeroPadding(int *image, int *new_image, int img_dim, int padding)
         }
 }
         
-void ConvOneChannel(int *input, int *output, int stride, int img_dim,int nbr_kernels, int * total_weights,int kernel)
+void ConvOneChannel(int *input, int *output, int stride, int img_dim,int nbr_kernels, int * total_weights,int kernel,int final_dim)
 {
-int final_dim;
-int *weight;
-final_dim = ((int)((img_dim - kernel)/stride)+1)*((int)((img_dim - kernel)/stride)+1);
+  int weight[kernel*kernel];
 
-for (int i=0; i<nbr_kernels; i++)
-{
-for (int k =0; k<kernel;k++){weight[k]= total_weights[k+i*(kernel*kernel)];}   // we have the i filter
-int start = i*img_dim*img_dim;
-
-
-}
-
-
+  for (int i=0; i<nbr_kernels; i++)
+  {
+    for (int k =0; k<(kernel*kernel);k++){weight[k]= total_weights[k+i*(kernel*kernel)];}   // we have the i filter
+    int start = i*final_dim;
+    Conv2D(input,output,stride,img_dim,kernel,weight,final_dim,start);
+  }
 }
 
 // ndiro conv ta3 each channel m3a ga3 l filters, apres we add ga3 l arrays to one array fih ga3 l channels 
 
+void TotalConv(int *)
+{
+
+
+
+
+}
+
+
 
 int main()
 {
-  int image[36] = {1,2,3,4,5, 6,7,8,9,10, 11,12,13,14,15, 16,17,18,19,20, 21,22,23,24,25};
+  int image[25] = {1,2,3,4,5, 6,7,8,9,10, 11,12,13,14,15, 16,17,18,19,20, 21,22,23,24,25};
 
   // ,26,27,28,29,30, 31,32,33,34,35,36 
 
-  int weights[9] = {0,0,0, 0,1,0, 0,0,0};
+  int weights[18] = {0,0,0, 0,1,0, 0,0,0, 0,0,0, 0,2,0, 0,0,0}; // 
   int img_dim = 5;
-  int kernel = 2;
+  int kernel = 3;
   int stride = 1;
-  int final_dim;
+  int final_dim_padding, final_dim_pooling;
   int padding = 1;
+  int new_image[18];
 
-  final_dim = ((int)(img_dim + 2*padding))*((int)(img_dim + 2*padding));
-  final_dim = ((int)((img_dim - kernel)/stride)+1)*((int)((img_dim - kernel)/stride)+1);
 
+  final_dim_padding = ((int)(img_dim + 2*padding))*((int)(img_dim + 2*padding));
+  final_dim_pooling = ((int)((img_dim - kernel)/stride)+1)*((int)((img_dim - kernel)/stride)+1);
+
+  ConvOneChannel(image, new_image, stride, img_dim,2 ,weights, kernel, final_dim_pooling);
+  // Conv2D(image, new_image, stride, img_dim, kernel, weights, final_dim_pooling,9);
+  
+  for(int i=0; i<18;i++){printf("%d",new_image[i]);}
   return 0;
  
 }
